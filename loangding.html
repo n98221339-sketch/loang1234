@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natsumi Script Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        body {
+            background-color: #0f0f14;
+            color: #f5f5fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at top right, #002233, #0f0f14);
+        }
+
+        .container {
+            background-color: #18181e;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #2a2a35;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hiệu ứng viền sáng trên cùng */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00ffaa, #00aaff);
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 900;
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00ffaa, #00aaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #828296;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #a0a0b4;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            background-color: #0f0f14;
+            border: 1px solid #323241;
+            border-radius: 8px;
+            color: #00ffaa;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
+        }
+
+        button.generate-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #00ffaa, #00aaff);
+            color: #0f0f14;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 25px;
+        }
+
+        button.generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 170, 255, 0.4);
+        }
+
+        button.generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .output-group {
+            display: none; /* Ẩn cho đến khi có kết quả */
+            background-color: #0f0f14;
+            border: 1px solid #323241;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .output-group.show {
+            display: block;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            background-color: transparent;
+            border: none;
+            color: #f5f5fa;
+            font-family: monospace;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+
+        button.copy-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background-color: #18181e;
+            color: #00ffaa;
+            border: 1px solid #00ffaa;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button.copy-btn:hover {
+            background-color: #00ffaa;
+            color: #0f0f14;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Natsumi Client</h1>
+        <p class="subtitle">Trình tạo mã Loadstring tự động cho Roblox</p>
+
+        <div class="input-group">
+            <label for="githubLink">Dán link GitHub của bạn vào đây:</label>
+            <input type="text" id="githubLink" placeholder="https://github.com/..." autocomplete="off">
+        </div>
+
+        <button class="generate-btn" onclick="generateScript()">TẠO SCRIPT</button>
+
+        <div class="output-group" id="outputGroup">
+            <textarea id="outputScript" readonly></textarea>
+            <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">Copy</button>
+        </div>
+    </div>
+
+    <script>
+        function generateScript() {
+            let input = document.getElementById("githubLink").value.trim();
+            let outputGroup = document.getElementById("outputGroup");
+            let outputScript = document.getElementById("outputScript");
+            let copyBtn = document.getElementById("copyBtn");
+
+            if (input === "") {
+                alert("Vui lòng dán link GitHub vào ô trống!");
+                return;
+            }
+
+            // Logic tự động chuyển link github.com/blob/ thành raw.githubusercontent.com
+            let rawLink = input;
+            if (rawLink.includes("github.com") && rawLink.includes("/blob/")) {
+                rawLink = rawLink.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
+            }
+
+            // Tạo đoạn loadstring hoàn chỉnh
+            let finalCode = `loadstring(game:HttpGet("${rawLink}"))()`;
+
+            // Hiển thị kết quả
+            outputScript.value = finalCode;
+            outputGroup.classList.add("show");
+            copyBtn.innerText = "Copy";
+            copyBtn.style.backgroundColor = "#18181e";
+            copyBtn.style.color = "#00ffaa";
+        }
+
+        function copyToClipboard() {
+            let outputScript = document.getElementById("outputScript");
+            let copyBtn = document.getElementById("copyBtn");
+
+            outputScript.select();
+            outputScript.setSelectionRange(0, 99999); /* Cho thiết bị di động */
+
+            navigator.clipboard.writeText(outputScript.value).then(() => {
+                copyBtn.innerText = "Đã Copy!";
+                copyBtn.style.backgroundColor = "#00ffaa";
+                copyBtn.style.color = "#0f0f14";
+                
+                // Trả lại trạng thái sau 2 giây
+                setTimeout(() => {
+                    copyBtn.innerText = "Copy";
+                    copyBtn.style.backgroundColor = "#18181e";
+                    copyBtn.style.color = "#00ffaa";
+                }, 2000);
+            });
+        }
+    </script>
+
+</body>
+</html>
